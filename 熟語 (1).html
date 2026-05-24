@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>英検準1級 前置詞マスター Pro</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --danger: #f43f5e;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --advice-bg: #fefce8;
+            --advice-text: #854d0e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 正解・不正解時の背景演出 */
+        body.flash-success { background-color: #d1fae5; }
+        body.flash-danger { background-color: #fee2e2; }
+
+        #app {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #818cf8);
+            color: white;
+            padding: 18px 16px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .container {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            animation: fadeIn 0.3s ease;
+        }
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ホーム・統計 */
+        .stats-box {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .stats-box h2 { color: var(--danger); font-size: 2rem; }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
+        .btn:disabled { background: #e2e8f0; color: #94a3b8; box-shadow: none; }
+
+        /* クイズメイン */
+        .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 15px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s; }
+
+        .question-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-sub); margin-bottom: 10px; font-weight: 600; }
+
+        .question-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .english-text { font-size: 1.4rem; font-weight: 700; line-height: 1.5; margin-top: 10px; }
+        .blank { display: inline-block; min-width: 50px; border-bottom: 3px solid var(--text-main); color: var(--primary); margin: 0 4px; }
+
+        /* アドバイス表示エリア */
+        #advice-area {
+            display: none;
+            background-color: var(--advice-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #eab308;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .advice-title { font-weight: 800; font-size: 0.85rem; color: var(--advice-text); margin-bottom: 5px; }
+        .advice-body { font-size: 0.95rem; line-height: 1.5; color: #713f12; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .option-btn {
+            background: white; border: 2px solid var(--border); border-radius: 14px;
+            padding: 14px; font-size: 1.2rem; font-weight: 700; transition: all 0.2s;
+        }
+        .option-btn.correct { background: var(--success); border-color: var(--success); color: white; }
+        .option-btn.wrong { background: var(--danger); border-color: var(--danger); color: white; }
+
+        #next-btn { display: none; margin-top: 15px; background-color: var(--text-main); }
+
+        /* リザルト */
+        .mistake-list { flex-grow: 1; overflow-y: auto; margin: 15px 0; border-top: 1px solid var(--border); }
+        .mistake-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .correct-ans { color: var(--danger); font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <header>英検準1級 前置詞マスター Pro</header>
+
+    <div id="home-screen" class="container screen active">
+        <div class="stats-box">
+            <p>復習が必要な熟語</p>
+            <h2 id="mistake-count">0</h2>
+        </div>
+        <button class="btn" onclick="startQuiz('all')">全問題から10問解く</button>
+        <button id="review-btn" class="btn btn-outline" onclick="startQuiz('review')">間違えた問題だけ復習 (10問)</button>
+    </div>
+
+    <div id="quiz-screen" class="container screen">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div class="question-header">
+            <span id="q-counter">Q 1/10</span>
+            <button onclick="quitQuiz()" style="background:none; border:none; color:var(--text-sub); font-size:0.8rem;">中断</button>
+        </div>
+
+        <div class="question-card">
+            <div id="q-ja" style="color:var(--text-sub); font-weight:500;"></div>
+            <div class="english-text" id="q-en"></div>
+        </div>
+
+        <div id="advice-area">
+            <div class="advice-title">💡 学習のアドバイス</div>
+            <div class="advice-body" id="advice-text"></div>
+        </div>
+
+        <div class="options-grid" id="options-container"></div>
+        <button id="next-btn" class="btn" onclick="loadNext()">次へ進む ➔</button>
+    </div>
+
+    <div id="result-screen" class="container screen">
+        <h2 style="text-align:center; margin-bottom:20px;">リザルト</h2>
+        <div style="text-align:center; font-size:2rem; font-weight:800; color:var(--primary); margin-bottom:20px;">
+            <span id="r-score">0</span> <span style="font-size:1rem; color:var(--text-sub);">/ <span id="r-total">0</span></span>
+        </div>
+        <div class="mistake-list" id="r-mistakes"></div>
+        <button class="btn" onclick="goHome()">🏠 ホームへ戻る</button>
+    </div>
+</div>
+
+<script>
+    const wordData = [
+        { en: "abide {ans}", ja: "〜に従う、遵守する", ans: "by", adv: "byは『そば』。ルールのそばを離れず寄り添うイメージです。" },
+        { en: "account {ans}", ja: "〜の割合を占める、説明する", ans: "for", adv: "forは『目標・対象』。ある対象（数値や理由）に向かって説明を届けるイメージ。" },
+        { en: "allow {ans}", ja: "〜を考慮に入れる", ans: "for", adv: "forには『〜に備えて』というニュアンスがあります。将来の不足に備えて余地を空けておくイメージ。" },
+        { en: "boil down {ans}", ja: "結局〜になる", ans: "to", adv: "煮詰まって最後に残った一点（to）に集約されるイメージです。" },
+        { en: "cope {ans}", ja: "〜をうまく処理する", ans: "with", adv: "withは『同伴』。問題と一緒にいて、それと向き合いながら扱うイメージ。" },
+        { en: "dispense {ans}", ja: "〜なしで済ます", ans: "with", adv: "dispenseは分配。元々あったもの（with）を外に配って、手元にない状態にするのが語源。" },
+        { en: "embark {ans}", ja: "〜に乗り出す、着手する", ans: "on", adv: "onは『接触』。船のデッキ（板）の上に乗る＝新しい活動の土台に乗るイメージ。" },
+        { en: "hinge {ans}", ja: "〜次第である", ans: "on", adv: "hinge（蝶番）がドアを支える土台（on）に依存している様子を表します。" },
+        { en: "resort {ans}", ja: "〜に訴える、頼る", ans: "to", adv: "toは『方向』。最後の手段としてその方向に走っていくイメージ。" },
+        { en: "yield {ans}", ja: "〜に屈する", ans: "to", adv: "相手の力に押されて、そちらの方向（to）へ折れ曲がるイメージ。" },
+        { en: "attribute A {ans} B", ja: "AをBのせいにする", ans: "to", adv: "原因の方向（to）へ指を指して『これのせいだ』とするイメージ。" },
+        { en: "comply {ans}", ja: "〜に従う", ans: "with", adv: "相手の要求と『共に(with)』動く、足並みを揃えるイメージ。" },
+        { en: "dwell {ans}", ja: "〜をくよくよ考える", ans: "on", adv: "onは『意識の接触・継続』。その問題の上に意識がずっと乗りっぱなしの状態。" },
+        { en: "opt {ans}", ja: "〜を選ぶ", ans: "for", adv: "たくさんの選択肢の中から、一つの目的（for）へ向かって手を伸ばすイメージ。" },
+        { en: "abstain {ans}", ja: "〜を控える", ans: "from", adv: "fromは『起点・分離』。対象から距離を置いて離れている状態。" },
+        { en: "derive {ans}", ja: "〜に由来する", ans: "from", adv: "川の源流（from）から水が引き出されてくるイメージ。" },
+        { en: "deprive A {ans} B", ja: "AからBを奪う", ans: "of", adv: "ofは『分離』。AにくっついていたBをペリッと剥がすイメージ。" },
+        { en: "impose A {ans} B", ja: "AをBに押し付ける", ans: "on", adv: "Bという土台の上に、重荷（A）をドスンと乗せるイメージ。" },
+        { en: "allude {ans}", ja: "〜をほのめかす", ans: "to", adv: "直接言わず、その方向（to）をチラッと指し示すイメージ。" },
+        { en: "persist {ans}", ja: "〜に固執する", ans: "in", adv: "inは『枠の中』。自分の考えの殻の中に閉じこもって頑固に続けるイメージ。" },
+        { en: "preside {ans}", ja: "〜を統轄する", ans: "over", adv: "overは『覆いかぶさる上』。全体を上から見下ろしてコントロールするイメージ。" },
+        { en: "revolve {ans}", ja: "〜を中心に展開する", ans: "around", adv: "aroundは『周囲』。中心の周りをぐるぐる回るイメージ。" },
+        { en: "delve {ans}", ja: "〜を徹底調査する", ans: "into", adv: "intoは『中へ入り込む』。表面だけでなく深く中まで掘り進むイメージ。" },
+        { en: "live up {ans}", ja: "期待に応える", ans: "to", adv: "期待という高い基準（to）まで、自分のレベルを上げて到達するイメージ。" },
+        { en: "confer {ans}", ja: "〜と相談する", ans: "with", adv: "相手と一緒に(with)座って意見を出し合うイメージ。" }
+    ];
+
+    const preps = ["in", "on", "at", "for", "to", "with", "of", "from", "by", "about", "into", "around", "over"];
+    let currentQs = [], cIdx = 0, score = 0, mistakes = [], globalMistakes = new Set();
+
+    function init() {
+        const saved = localStorage.getItem('eiken_v3');
+        if (saved) globalMistakes = new Set(JSON.parse(saved));
+        updateHome();
+    }
+
+    function updateHome() {
+        document.getElementById('mistake-count').innerText = globalMistakes.size;
+        document.getElementById('review-btn').disabled = globalMistakes.size === 0;
+    }
+
+    function startQuiz(mode) {
+        let pool = mode === 'all' ? wordData : wordData.filter(q => globalMistakes.has(q.en));
+        currentQs = pool.sort(() => 0.5 - Math.random()).slice(0, 10);
+        cIdx = 0; score = 0; mistakes = [];
+        showScreen('quiz-screen');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const q = currentQs[cIdx];
+        document.body.className = '';
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('advice-area').style.display = 'none';
+        document.getElementById('q-counter').innerText = `Q ${cIdx + 1} / ${currentQs.length}`;
+        document.getElementById('progress-fill').style.width = `${(cIdx / currentQs.length) * 100}%`;
+        document.getElementById('q-ja').innerText = q.ja;
+        document.getElementById('q-en').innerHTML = q.en.replace('{ans}', '<span class="blank" id="blank-area">?</span>');
+
+        let opts = [q.ans, ...preps.filter(p => p !== q.ans).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        opts.forEach(o => {
+            const b = document.createElement('button');
+            b.className = 'option-btn';
+            b.innerText = o;
+            b.onclick = () => check(o, q.ans, b, q);
+            container.appendChild(b);
+        });
+    }
+
+    function check(sel, ans, btn, q) {
+        document.querySelectorAll('.option-btn').forEach(b => b.onclick = null);
+        const blank = document.getElementById('blank-area');
+        blank.innerText = ans;
+        
+        // アドバイスの表示
+        document.getElementById('advice-text').innerText = q.adv;
+        document.getElementById('advice-area').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'flex';
+
+        if (sel === ans) {
+            btn.classList.add('correct');
+            document.body.className = 'flash-success';
+            score++;
+            globalMistakes.delete(q.en);
+        } else {
+            btn.classList.add('wrong');
+            document.body.className = 'flash-danger';
+            document.querySelectorAll('.option-btn').forEach(b => { if(b.innerText === ans) b.classList.add('correct'); });
+            mistakes.push(q);
+            globalMistakes.add(q.en);
+        }
+        localStorage.setItem('eiken_v3', JSON.stringify([...globalMistakes]));
+    }
+
+    function loadNext() {
+        cIdx++;
+        if (cIdx < currentQs.length) loadQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        showScreen('result-screen');
+        document.getElementById('r-score').innerText = score;
+        document.getElementById('r-total').innerText = currentQs.length;
+        const list = document.getElementById('r-mistakes');
+        list.innerHTML = mistakes.length ? '<p style="font-weight:700; margin-bottom:10px;">間違えた問題:</p>' : '<p style="color:var(--success); font-weight:700; text-align:center;">全問正解です！</p>';
+        mistakes.forEach(m => {
+            const d = document.createElement('div');
+            d.className = 'mistake-item';
+            d.innerHTML = `<div style="font-weight:700;">${m.en.replace('{ans}', `<span class="correct-ans">${m.ans}</span>`)}</div><div style="font-size:0.85rem; color:var(--text-sub);">${m.ja}</div>`;
+            list.appendChild(d);
+        });
+    }
+
+    function quitQuiz() { if(confirm("中断しますか？")) goHome(); }
+    function goHome() { updateHome(); showScreen('home-screen'); document.body.className = ''; }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+    window.onload = init;
+</script>
+</body>
+</html>
